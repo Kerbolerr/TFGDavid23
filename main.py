@@ -6,17 +6,13 @@ import pandas
 
 import numpy as np
 import matplotlib.pyplot as plt
-import seaborn as sb
 from sklearn.model_selection import train_test_split
 from sklearn import preprocessing
 from sklearn.linear_model import *
 from sklearn import tree
 from sklearn import ensemble
 from sklearn.svm import SVC
-from xgboost import XGBClassifier
 from sklearn import metrics
-from xgboost.sklearn import XGBRegressor
-from lightgbm import LGBMRegressor
 
 tabletModel = joblib.load(open("Tablet.sav", 'rb'))
 featuresScalerTablet = joblib.load(open("scalerFeaturesTablet.skl",'rb'))
