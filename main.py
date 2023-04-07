@@ -74,6 +74,10 @@ def prepareForModelLaptop(screenSize,storage,ram,sddStorage,resolution,yearOfLau
 
 app = FastAPI()
 
+@app.get("/")
+def root():
+    return {"message": "Hello World"}
+
 @app.get("/tablet/")
 def read_root(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
     return {"price":targetScalerTablet.inverse_transform([tabletModel.predict(featuresScalerTablet.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]))])[0][0]}
