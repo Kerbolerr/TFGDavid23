@@ -15,21 +15,21 @@ from sklearn import ensemble
 from sklearn.svm import SVC
 from sklearn import metrics
 
-tabletModel = joblib.load(open("Tablet.sav", 'rb'))
-featuresScalerTablet = joblib.load(open("scalerFeaturesTablet.skl",'rb'))
-targetScalerTablet = joblib.load(open("scalerTargetTablet.skl",'rb'))
+tabletModel = joblib.load(open("./Model/Tablet.sav", 'rb'))
+featuresScalerTablet = joblib.load(open("./Model/scalers/scalerFeaturesTablet.skl",'rb'))
+targetScalerTablet = joblib.load(open("./Model/scalers/scalerTargetTablet.skl",'rb'))
 
-smartphoneModel = joblib.load(open("Smartphone.sav", 'rb'))
-featuresScalerSmartphone = joblib.load(open("scalerFeaturesSmartphone.skl",'rb'))
-targetScalerSmartphone = joblib.load(open("scalerTargetSmartphone.skl",'rb'))
+smartphoneModel = joblib.load(open("./Model/Smartphone.sav", 'rb'))
+featuresScalerSmartphone = joblib.load(open("./Model/scalers/scalerFeaturesSmartphone.skl",'rb'))
+targetScalerSmartphone = joblib.load(open("./Model/scalers/scalerTargetSmartphone.skl",'rb'))
 
-desktopModel = joblib.load(open("Desktop.sav", 'rb'))
-featuresScalerDesktop = joblib.load(open("scalerFeaturesDesktop.skl",'rb'))
-targetScalerDesktop = joblib.load(open("scalerTargetDesktop.skl",'rb'))
+desktopModel = joblib.load(open("./Model/Desktop.sav", 'rb'))
+featuresScalerDesktop = joblib.load(open("./Model/scalers/scalerFeaturesDesktop.skl",'rb'))
+targetScalerDesktop = joblib.load(open("./Model/scalers/scalerTargetDesktop.skl",'rb'))
 
-laptopModel = joblib.load(open("Laptop.sav", 'rb'))
-featuresScalerLaptop = joblib.load(open("scalerFeaturesLaptop.skl",'rb'))
-targetScalerLaptop = joblib.load(open("scalerTargetLaptop.skl",'rb'))
+laptopModel = joblib.load(open("./Model/Laptop.sav", 'rb'))
+featuresScalerLaptop = joblib.load(open("./Model/scalers/scalerFeaturesLaptop.skl",'rb'))
+targetScalerLaptop = joblib.load(open("./Model/scalers/scalerTargetLaptop.skl",'rb'))
 
 def prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
     models = ["iPad","iPad Pro","iPad Air","iPad mini","Galaxy Tab"]
