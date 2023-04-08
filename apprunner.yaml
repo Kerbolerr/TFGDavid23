@@ -12,6 +12,6 @@ build:
     - pip install matplotlib
     - pip install scikit-learn
 run:
-  command: python3 main.py
+  command: python main.py
   network:
     port: 8000
