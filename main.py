@@ -3,6 +3,7 @@ from typing import Union
 from fastapi import FastAPI
 import joblib
 import pandas
+import uvicorn,os
 
 import numpy as np
 import matplotlib.pyplot as plt
