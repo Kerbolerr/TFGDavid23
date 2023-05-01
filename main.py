@@ -20,10 +20,10 @@ from scipy.spatial import distance
 
 
 
-desktopData = pandas.read_excel('./DesktopTest.ods',engine="odf")
-laptopData = pandas.read_excel('./LaptopTest.ods', engine = "odf")
-tabletData = pandas.read_excel('./TabletTest.ods',engine="odf")
-smartphoneData = pandas.read_excel('./SmartphoneTest.ods',engine="odf")
+desktopData = pandas.read_excel('./DesktopTest.xlsx')
+laptopData = pandas.read_excel('./LaptopTest.xlsx')
+tabletData = pandas.read_excel('./TabletTest.xlsx')
+smartphoneData = pandas.read_excel('./SmartphoneTest.xlsx')
 
 tabletModel = joblib.load(open("./Model/Models/MinPrice/Tablet.sav", 'rb'))
 featuresScalerTablet = joblib.load(open("./Model/scalers/MinPrice/scalerFeaturesTablet.skl",'rb'))
