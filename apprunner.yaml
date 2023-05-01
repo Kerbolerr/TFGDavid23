@@ -11,6 +11,7 @@ build:
     - pip install pandas
     - pip install matplotlib
     - pip install scikit-learn
+    - pip install odfpy
 run:
   command: python main.py
   network:
