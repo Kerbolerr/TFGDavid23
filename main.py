@@ -20,10 +20,10 @@ from scipy.spatial import distance
 
 
 
-desktopData = pandas.read_excel('./DesktopTest.xlsx')
-laptopData = pandas.read_excel('./LaptopTest.xlsx')
-tabletData = pandas.read_excel('./TabletTest.xlsx')
-smartphoneData = pandas.read_excel('./SmartphoneTest.xlsx')
+desktopData = pandas.read_excel('./Dataset/Desktop.xlsx')
+laptopData = pandas.read_excel('./Dataset/Laptop.xlsx')
+tabletData = pandas.read_excel('./Dataset/Tablet.xlsx')
+smartphoneData = pandas.read_excel('./Dataset/Smartphone.xlsx')
 
 tabletModel = joblib.load(open("./Model/Models/MinPrice/Tablet.sav", 'rb'))
 featuresScalerTablet = joblib.load(open("./Model/scalers/MinPrice/scalerFeaturesTablet.skl",'rb'))
