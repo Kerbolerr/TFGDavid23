@@ -1,0 +1,7 @@
+uvicorn
+uvloop
+fastapi
+joblib
+pandas
+matplotlib
+scikit-learn

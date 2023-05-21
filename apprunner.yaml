@@ -1,0 +1,17 @@
+
+version: 1.0
+runtime: python3
+build:
+  commands:
+    build:
+    - pip install uvicorn
+    - pip install uvloop
+    - pip install fastapi
+    - pip install joblib
+    - pip install pandas
+    - pip install matplotlib
+    - pip install scikit-learn
+run:
+  command: python main.py
+  network:
+    port: 8000
