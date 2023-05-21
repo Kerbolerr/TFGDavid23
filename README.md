@@ -24,7 +24,7 @@ pip install -r requirements.txt
 ## Usage
 ### Data prediction tool
 
-Just by executing the Python script, the API will start running on localhost.
+Just by executing the Python script, the API run running on localhost.
 
 ```bash
 python3 main.py
