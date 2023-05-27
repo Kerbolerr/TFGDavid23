@@ -3,6 +3,7 @@ from typing import Union
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from pydantic import BaseModel
 import joblib
 import pandas
 import uvicorn,os
@@ -17,8 +18,6 @@ from sklearn import ensemble
 from sklearn.svm import SVC
 from sklearn import metrics
 from scipy.spatial import distance
-
-
 
 desktopData = pandas.read_excel('./Dataset/Desktop.xlsx')
 laptopData = pandas.read_excel('./Dataset/Laptop.xlsx')
@@ -62,21 +61,16 @@ laptopFeaturesScaled = featuresScalerLaptopMaxPrice.transform(laptopData[list(la
 smartphoneFeaturesScaled = featuresScalerSmartphoneMaxPrice.transform(smartphoneData[list(smartphoneData)[0:len(list(smartphoneData))-1]])
 tabletFeaturesScaled = featuresScalerTabletMaxPrice.transform(tabletData[list(tabletData)[0:len(list(tabletData))-1]])
 
-def evaluatePrediction(devicesScaled,inputScaled):
-    distances = [distance.euclidean(inputScaled,device) for device in devicesScaled]
+desktopTarget = desktopData[list(desktopData)[len(list(desktopData))-1]]
+laptopTarget = laptopData[list(laptopData)[len(list(laptopData))-1]]
+smartphoneTarget = smartphoneData[list(smartphoneData)[len(list(smartphoneData))-1]]
+tabletTarget = tabletData[list(tabletData)[len(list(tabletData))-1]]
+
+def evaluatePrediction(devicesScaled,featuresScaled, targetNotScaled):
+    values = [(devicesScaled[index],targetNotScaled[index]) for index in range(0,len(devicesScaled))]
+    distances = [(distance.euclidean(featuresScaled,value[0]),value[1]) for value in values]
     distances.sort()
-    rating = 60
-    print(len(inputScaled[0]))
-    print(distances[0:20])
-    for distan in distances[0:20]:
-        if distan > 3 and distan < 7 :
-            rating = rating - 1
-        elif distan >7 and distan < 13:
-            rating = rating - 2
-        elif distan >=13:
-            rating = rating - 3
-    print(rating)
-    return (rating/60)*100
+    return (1-((np.std([a[1] for a in distances][1:21]))/(sum([a[1] for a in distances][1:21])/20))/2)*100
 
 
 def prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
@@ -133,6 +127,54 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+class Device(BaseModel):
+    name: str
+    description: str
+    minPrice: float
+    maxPrice: float
+    
+    def toDict(self):
+        return{"name":self.name,"description":self.description,"minPrice":self.minPrice,"maxPrice":self.maxPrice}
+
+class DesktopComputer(Device):
+    hddCapacity: int
+    sddCapacity: int
+    RAM: int
+    brand: str
+    graphics: str
+    cpu: str
+    yearBought: int
+    
+    def toDict(self):
+        deviceDict = super().toDict()
+        deviceDict["hddCapacity"]=self.hddCapacity
+        deviceDict["sddCapacity"]=self.sddCapacity
+        deviceDict["RAM"]=self.RAM
+        deviceDict["brand"]=self.brand
+        deviceDict["graphics"]=self.graphics
+        deviceDict["cpu"]=self.cpu
+        deviceDict["yearBought"]=self.yearBought
+        return deviceDict
+
+desktopComputers=[]
+
+@app.post("/devices/desktop/")
+async def createDesktop(desktopComputer: DesktopComputer):
+    desktopComputers.append(desktopComputer)
+    return {"id":len(desktopComputers)-1}
+
+@app.get("/devices/desktop/")
+def getDesktop(identifier:int):
+    return desktopComputers[identifier].toDict()
+
+@app.get("/devices/desktop/get")
+def getDesktop(start:int,howMany:int=20):
+    someDesktopComputers={}
+    for index in range(start,min(len(desktopComputers),start+min(20,howMany))):
+        someDesktopComputers[str(index)] = desktopComputers[index]
+    return {"devices":someDesktopComputers}
+
+
 @app.get("/")
 def root():
     return {"message": "Hello World"}
@@ -141,25 +183,25 @@ def root():
 def read_root(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
     return {"MinPrice":targetScalerTablet.inverse_transform([tabletModel.predict(featuresScalerTablet.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]))])[0][0],
     "MaxPrice":targetScalerTabletMaxPrice.inverse_transform([tabletModelMaxPrice.predict(featuresScalerTabletMaxPrice.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]))])[0][0],
-    "Confidence":evaluatePrediction(tabletFeaturesScaled,featuresScalerTabletMaxPrice.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]))}
+    "Confidence":evaluatePrediction(tabletFeaturesScaled,featuresScalerTabletMaxPrice.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]),tabletTarget)}
 
 @app.get("/smartphone/")
 def read_root(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model):
     return {"MinPrice":targetScalerSmartphone.inverse_transform([smartphoneModel.predict(featuresScalerSmartphone.transform([prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]))])[0][0],
     "MaxPrice":targetScalerSmartphoneMaxPrice.inverse_transform([smartphoneModelMaxPrice.predict(featuresScalerSmartphoneMaxPrice.transform([prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]))])[0][0],
-    "Confidence":evaluatePrediction(smartphoneFeaturesScaled,featuresScalerSmartphoneMaxPrice.transform([prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]))}
+    "Confidence":evaluatePrediction(smartphoneFeaturesScaled,featuresScalerSmartphoneMaxPrice.transform([prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]),smartphoneTarget)}
 
 @app.get("/desktop/")
 def read_root(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel):
     return {"MinPrice":targetScalerDesktop.inverse_transform([desktopModel.predict(featuresScalerDesktop.transform([prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
     "MaxPrice":targetScalerDesktopMaxPrice.inverse_transform([desktopModelMaxPrice.predict(featuresScalerDesktopMaxPrice.transform([prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
-    "Confidence":evaluatePrediction(desktopFeaturesScaled,featuresScalerDesktopMaxPrice.transform([prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]))}
+    "Confidence":evaluatePrediction(desktopFeaturesScaled,featuresScalerDesktopMaxPrice.transform([prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]),desktopTarget)}
 
 @app.get("/laptop/")
 def read_root(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel):
     return {"MinPrice":targetScalerLaptop.inverse_transform([laptopModel.predict(featuresScalerLaptop.transform([prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
     "MaxPrice":targetScalerLaptopMaxPrice.inverse_transform([laptopModelMaxPrice.predict(featuresScalerLaptopMaxPrice.transform([prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
-    "Confidence":evaluatePrediction(laptopFeaturesScaled,featuresScalerLaptopMaxPrice.transform([prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]))}
+    "Confidence":evaluatePrediction(laptopFeaturesScaled,featuresScalerLaptopMaxPrice.transform([prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]),laptopTarget)}
 
 if __name__ == "__main__":
     uvicorn.run(
