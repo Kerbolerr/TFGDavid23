@@ -18,8 +18,8 @@ Specifically, since the project has been done on collaboration with [e-reuse](ht
 pip install -r requirements.txt
 ```
 
-### Web frontend for using the API
-
+### Web frontend for using the API based on React
+[Web frontend](https://github.com/Kerbolerr/TFGDavid23Web)
 
 ## Usage
 ### Data prediction tool
