@@ -1,23 +1,12 @@
-from typing import Union
-
-from fastapi import FastAPI
-from fastapi.middleware.cors import CORSMiddleware
-
-from pydantic import BaseModel
 import joblib
 import pandas
 import uvicorn,os
-
-import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn import preprocessing
+import numpy
 from sklearn.linear_model import *
-from sklearn import tree
-from sklearn import ensemble
-from sklearn.svm import SVC
-from sklearn import metrics
 from scipy.spatial import distance
+from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 
 desktopData = pandas.read_excel('./Dataset/Desktop.xlsx')
 laptopData = pandas.read_excel('./Dataset/Laptop.xlsx')
@@ -70,7 +59,7 @@ def evaluatePrediction(devicesScaled,featuresScaled, targetNotScaled):
     values = [(devicesScaled[index],targetNotScaled[index]) for index in range(0,len(devicesScaled))]
     distances = [(distance.euclidean(featuresScaled[0],value[0]),value[1]) for value in values]
     distances.sort()
-    return (1-((np.std([a[1] for a in distances][1:21]))/(sum([a[1] for a in distances][1:21])/20))/2)*100
+    return (1-((numpy.std([a[1] for a in distances][1:21]))/(sum([a[1] for a in distances][1:21])/20))/2)*100
 
 
 def prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
@@ -90,30 +79,23 @@ def prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphics
     brands = ["Dell","Lenovo","HP","Fujitsu","Mars","Acer"]
     graphicsBrands = ["Intel","AMD","Nvidia"]
     cpuBrands = ["Xeon","Pentium","Core i3","Core i5","Core i7"]
-    
-    brandsVector = [name==brand for name in brands]
-    brandsVector.append(1-sum(brandsVector))
-    
-    graphicsVector = [name==graphicsModel for name in graphicsBrands]
-    
-    cpuVector = [name==cpuModel for name in cpuBrands]
-    cpuVector.append(1-sum(cpuVector))
+    brandsVector, graphicsVector, cpuVector = prepareVectors(brands, graphicsBrands, cpuBrands,brand,graphicsModel,cpuModel)
     return [hddStorage,sddStorage,ram,yearOfLaunch]+brandsVector+graphicsVector+cpuVector
 
 def prepareForModelLaptop(screenSize,storage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel):
     brands = ["Thinkpad","Probook","Elitebook","Latitude","Lifebook","Autre"]
     graphicsBrands = ["Intel","AMD","Nvidia"]
     cpuBrands = ["Xeon","Pentium","Core i3","Core i5","Core i7"]
-    
+    brandsVector, graphicsVector, cpuVector = prepareVectors(brands, graphicsBrands, cpuBrands,brand,graphicsModel,cpuModel)
+    return [screenSize,storage,ram,sddStorage,resolution,yearOfLaunch]+brandsVector+graphicsVector+cpuVector
+
+def prepareVectors(brands, graphicsBrands, cpuBrands, brand, graphicsModel, cpuModel):
     brandsVector = [name==brand for name in brands]
     brandsVector.append(1-sum(brandsVector))
-    
     graphicsVector = [name==graphicsModel for name in graphicsBrands]
-    
     cpuVector = [name==cpuModel for name in cpuBrands]
     cpuVector.append(1-sum(cpuVector))
-    print([screenSize,storage,ram,sddStorage,resolution,yearOfLaunch]+brandsVector+graphicsVector+cpuVector)
-    return [screenSize,storage,ram,sddStorage,resolution,yearOfLaunch]+brandsVector+graphicsVector+cpuVector
+    return brandsVector,graphicsVector,cpuVector
 
 app = FastAPI()
 
@@ -137,6 +119,7 @@ class Device(BaseModel):
         return{"name":self.name,"description":self.description,"minPrice":self.minPrice,"maxPrice":self.maxPrice}
 
 class DesktopComputer(Device):
+    """A desktop computer (for section browse of the web application, TODO)"""
     hddCapacity: int
     sddCapacity: int
     RAM: int
@@ -160,48 +143,74 @@ desktopComputers=[]
 
 @app.post("/devices/desktop/")
 async def createDesktop(desktopComputer: DesktopComputer):
+    """Creates a new desktop computer (for section browse of the web application, TODO)"""
     desktopComputers.append(desktopComputer)
     return {"id":len(desktopComputers)-1}
 
 @app.get("/devices/desktop/")
 def getDesktop(identifier:int):
+    """Gets a desktop computer by its id (for section browse of the web application, TODO)"""
     return desktopComputers[identifier].toDict()
 
 @app.get("/devices/desktop/get")
 def getDesktop(start:int,howMany:int=20):
+    """Gets a list of desktop computers (for section browse of the web application, TODO)"""
     someDesktopComputers={}
     for index in range(start,min(len(desktopComputers),start+min(20,howMany))):
         someDesktopComputers[str(index)] = desktopComputers[index]
     return {"devices":someDesktopComputers}
 
-
 @app.get("/")
 def root():
-    return {"message": "Hello World"}
+    return {"message": "Use /docs to see the documentation"}
 
 @app.get("/tablet/")
 def read_root(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
-    return {"MinPrice":targetScalerTablet.inverse_transform([tabletModel.predict(featuresScalerTablet.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]))])[0][0],
-    "MaxPrice":targetScalerTabletMaxPrice.inverse_transform([tabletModelMaxPrice.predict(featuresScalerTabletMaxPrice.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]))])[0][0],
-    "Confidence":evaluatePrediction(tabletFeaturesScaled,featuresScalerTabletMaxPrice.transform([prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]),tabletTarget)}
+    """Predicts the price of a tablet based on its features"""
+    features = [prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]
+    minPrice = targetScalerTablet.inverse_transform([tabletModel.predict(featuresScalerTablet.transform(features))])[0][0]
+    maxPrice = targetScalerTabletMaxPrice.inverse_transform([tabletModelMaxPrice.predict(featuresScalerTabletMaxPrice.transform(features))])[0][0]
+    confidence = evaluatePrediction(tabletFeaturesScaled,featuresScalerTabletMaxPrice.transform(features),tabletTarget)
+    if  maxPrice>minPrice:#We want the min price to be the lowest. Because of the way the model is trained, sometimes the max price is lower than the min price
+        return {"MinPrice":minPrice, "MaxPrice":maxPrice, "Confidence":confidence}
+    else:
+        return {"MinPrice":maxPrice, "MaxPrice":minPrice, "Confidence":confidence}
 
 @app.get("/smartphone/")
 def read_root(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model):
-    return {"MinPrice":targetScalerSmartphone.inverse_transform([smartphoneModel.predict(featuresScalerSmartphone.transform([prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]))])[0][0],
-    "MaxPrice":targetScalerSmartphoneMaxPrice.inverse_transform([smartphoneModelMaxPrice.predict(featuresScalerSmartphoneMaxPrice.transform([prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]))])[0][0],
-    "Confidence":evaluatePrediction(smartphoneFeaturesScaled,featuresScalerSmartphoneMaxPrice.transform([prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]),smartphoneTarget)}
+    """Predicts the price of a smartphone based on its features"""
+    features = [prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]
+    minPrice = targetScalerSmartphone.inverse_transform([smartphoneModel.predict(featuresScalerSmartphone.transform(features))])[0][0]
+    maxPrice = targetScalerSmartphoneMaxPrice.inverse_transform([smartphoneModelMaxPrice.predict(featuresScalerSmartphoneMaxPrice.transform(features))])[0][0]
+    confidence = evaluatePrediction(smartphoneFeaturesScaled,featuresScalerSmartphoneMaxPrice.transform(features),smartphoneTarget)
+    if  maxPrice>minPrice:#We want the min price to be the lowest. Because of the way the model is trained, sometimes the max price is lower than the min price
+        return {"MinPrice":minPrice, "MaxPrice":maxPrice, "Confidence":confidence}
+    else:
+        return {"MinPrice":maxPrice, "MaxPrice":minPrice, "Confidence":confidence}
 
 @app.get("/desktop/")
 def read_root(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel):
-    return {"MinPrice":targetScalerDesktop.inverse_transform([desktopModel.predict(featuresScalerDesktop.transform([prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
-    "MaxPrice":targetScalerDesktopMaxPrice.inverse_transform([desktopModelMaxPrice.predict(featuresScalerDesktopMaxPrice.transform([prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
-    "Confidence":evaluatePrediction(desktopFeaturesScaled,featuresScalerDesktopMaxPrice.transform([prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]),desktopTarget)}
+    """Predicts the price of a desktop computer based on its features"""
+    features = [prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]
+    minPrice = targetScalerDesktop.inverse_transform([desktopModel.predict(featuresScalerDesktop.transform(features))])[0][0]
+    maxPrice = targetScalerDesktopMaxPrice.inverse_transform([desktopModelMaxPrice.predict(featuresScalerDesktopMaxPrice.transform(features))])[0][0]
+    confidence = evaluatePrediction(desktopFeaturesScaled,featuresScalerDesktopMaxPrice.transform(features),desktopTarget)
+    if  maxPrice>minPrice:#We want the min price to be the lowest. Because of the way the model is trained, sometimes the max price is lower than the min price
+        return {"MinPrice":minPrice, "MaxPrice":maxPrice, "Confidence":confidence}
+    else:
+        return {"MinPrice":maxPrice, "MaxPrice":minPrice, "Confidence":confidence}
 
 @app.get("/laptop/")
 def read_root(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel):
-    return {"MinPrice":targetScalerLaptop.inverse_transform([laptopModel.predict(featuresScalerLaptop.transform([prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
-    "MaxPrice":targetScalerLaptopMaxPrice.inverse_transform([laptopModelMaxPrice.predict(featuresScalerLaptopMaxPrice.transform([prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]))])[0][0],
-    "Confidence":evaluatePrediction(laptopFeaturesScaled,featuresScalerLaptopMaxPrice.transform([prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]),laptopTarget)}
+    """Predicts the price of a laptop based on its features"""
+    features = [prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]
+    minPrice = targetScalerLaptop.inverse_transform([laptopModel.predict(featuresScalerLaptop.transform(features))])[0][0]
+    maxPrice = targetScalerLaptopMaxPrice.inverse_transform([laptopModelMaxPrice.predict(featuresScalerLaptopMaxPrice.transform(features))])[0][0]
+    confidence = evaluatePrediction(laptopFeaturesScaled,featuresScalerLaptopMaxPrice.transform(features),laptopTarget)
+    if  maxPrice>minPrice:#We want the min price to be the lowest. Because of the way the model is trained, sometimes the max price is lower than the min price
+        return {"MinPrice":minPrice, "MaxPrice":maxPrice, "Confidence":confidence}
+    else:
+        return {"MinPrice":maxPrice, "MaxPrice":minPrice, "Confidence":confidence}
 
 if __name__ == "__main__":
     uvicorn.run(
