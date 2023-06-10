@@ -4,7 +4,7 @@ This application has been developed in the context of a bachelor’s thesis for 
 
 It provides price estimation for desktop, laptops, smartphones and tablets. It is optimized for devices older than 2020, though it can also work with newer devices.
 
-Data was collected from [Backmarket](https://www.backmarket.es/es-es). Model has already been trained and is provided as a dump with [Joblib](https://joblib.readthedocs.io/en/latest/). However, cleaned datasets for devices are provided as .xlsx files.
+Data was collected from [Backmarket](https://www.backmarket.es/es-es). Model has already been trained and is provided as a dump with [Joblib](https://joblib.readthedocs.io/en/latest/). We do also provide datasets as .xlsx files for other approaches or research.
 
 The application consists of a Python script that uses models on [Sklearn](https://scikit-learn.org/stable/) to obtain predictions for a given device.
 
