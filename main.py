@@ -6,7 +6,7 @@ from sklearn.linear_model import *
 from scipy.spatial import distance
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 desktopData = pandas.read_excel('./Dataset/Desktop.xlsx')
 laptopData = pandas.read_excel('./Dataset/Laptop.xlsx')
@@ -141,6 +141,11 @@ class DesktopComputer(Device):
 
 desktopComputers=[]
 
+class Response(BaseModel):
+    maxPrice:float = Field(..., example=245)
+    minPrice:float = Field(..., example=205)
+    confidenceOnPrediction:float = Field(..., example=0.91)
+
 @app.post("/devices/desktop/")
 async def createDesktop(desktopComputer: DesktopComputer):
     """Creates a new desktop computer (for section browse of the web application, TODO)"""
@@ -164,7 +169,7 @@ def getDesktop(start:int,howMany:int=20):
 def root():
     return {"message": "Use /docs to see the documentation"}
 
-@app.get("/tablet/")
+@app.get("/tablet/", response_model=Response)
 def read_root(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
     """Predicts the price of a tablet based on its features"""
     features = [prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model)]
@@ -176,7 +181,7 @@ def read_root(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
     else:
         return {"MinPrice":maxPrice, "MaxPrice":minPrice, "Confidence":confidence}
 
-@app.get("/smartphone/")
+@app.get("/smartphone/", response_model=Response)
 def read_root(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model):
     """Predicts the price of a smartphone based on its features"""
     features = [prepareForModelSmartphone(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch,model)]
@@ -188,7 +193,7 @@ def read_root(screenSize,storage,ram,megapixels,resolution,bandwith,yearOfLaunch
     else:
         return {"MinPrice":maxPrice, "MaxPrice":minPrice, "Confidence":confidence}
 
-@app.get("/desktop/")
+@app.get("/desktop/", response_model=Response)
 def read_root(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel):
     """Predicts the price of a desktop computer based on its features"""
     features = [prepareForModelDesktop(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuModel)]
@@ -200,7 +205,7 @@ def read_root(hddStorage,sddStorage,ram,yearOfLaunch,brand,graphicsModel,cpuMode
     else:
         return {"MinPrice":maxPrice, "MaxPrice":minPrice, "Confidence":confidence}
 
-@app.get("/laptop/")
+@app.get("/laptop/", response_model=Response)
 def read_root(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel):
     """Predicts the price of a laptop based on its features"""
     features = [prepareForModelLaptop(screenSize,hddStorage,ram,sddStorage,resolution,yearOfLaunch,brand,graphicsModel,cpuModel)]
