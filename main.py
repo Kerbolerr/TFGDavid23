@@ -59,7 +59,7 @@ def evaluatePrediction(devicesScaled,featuresScaled, targetNotScaled):
     values = [(devicesScaled[index],targetNotScaled[index]) for index in range(0,len(devicesScaled))]
     distances = [(distance.euclidean(featuresScaled[0],value[0]),value[1]) for value in values]
     distances.sort()
-    return (1-((numpy.std([a[1] for a in distances][1:21]))/(sum([a[1] for a in distances][1:21])/20))/2)*100
+    return max(100,(1-((numpy.std([a[1] for a in distances][1:21]))/(sum([a[1] for a in distances][1:21])/20))/3)*100)
 
 
 def prepareForModelTablet(screenSize,storage,ram,resolution,yearOfLaunch,megapixels,model):
